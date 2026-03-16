@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import logging
 import os
-import re
 import shlex
-import shutil
 import subprocess
 from pathlib import Path
 
-SPIRV_FLAG = " --offload-arch=amdgcnspirv"
+logging.basicConfig(level=logging.INFO)
+
 DEFAULT_SKIP_BENCHMARKS_FILE = Path(__file__).with_name(
     "hecbench_spirv_skipped_benchmarks.txt"
 )
@@ -31,7 +31,7 @@ def load_skipped_benchmarks(skip_file: Path) -> set[str]:
 def run_cmd(
     cmd: list[str], cwd: Path, env: dict[str, str]
 ) -> subprocess.CompletedProcess:
-    print(f"++ Exec [{cwd}]$ {shlex.join(cmd)}", flush=True)
+    logging.info(f"++ Exec [{cwd}]$ {shlex.join(cmd)}")
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -142,29 +142,6 @@ def select_bench_dirs(
     return selected_bench_dirs, skipped_present
 
 
-def copy_hecbench_tree(source_dir: Path, output_dir: Path) -> None:
-    """Copy HeCBench source while tolerating dangling symlinks in optional trees."""
-    try:
-        shutil.copytree(
-            source_dir,
-            output_dir,
-            symlinks=True,
-            ignore_dangling_symlinks=True,
-        )
-        return
-    except shutil.Error as exc:
-        # Some entries in HeCBench can be dangling links in partial checkouts.
-        # Continue and let benchmark discovery validate required content.
-        print(
-            f"WARNING: copytree reported {len(exc.args[0]) if exc.args else 0} entry issues; "
-            "continuing with copied content",
-            flush=True,
-        )
-    except FileNotFoundError as exc:
-        # Treat as a soft issue and rely on post-copy benchmark validation.
-        print(f"WARNING: copytree encountered missing entry: {exc}", flush=True)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-dir", type=Path, required=True)
@@ -181,28 +158,22 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.source_dir.is_dir():
-        print(f"ERROR: source directory not found: {args.source_dir}", flush=True)
+        logging.error(f"Source directory not found: {args.source_dir}")
         return 1
 
-    if args.output_dir.exists():
-        shutil.rmtree(args.output_dir)
-    copy_hecbench_tree(args.source_dir, args.output_dir)
-
     skipped_benchmarks = load_skipped_benchmarks(args.skip_benchmarks_file)
-    print(
+    logging.info(
         f"Loaded {len(skipped_benchmarks)} skipped benchmark(s) from: "
         f"{args.skip_benchmarks_file}",
-        flush=True,
     )
 
-    src_dir = args.output_dir / "src"
+    src_dir = args.source_dir / "src"
     bench_dirs, skipped_bench_dirs = select_bench_dirs(src_dir, skipped_benchmarks)
 
     if skipped_bench_dirs:
-        print(
+        logging.info(
             f"Skipping {len(skipped_bench_dirs)} benchmark(s): "
             + ", ".join(skipped_bench_dirs),
-            flush=True,
         )
 
     env = dict(os.environ)
@@ -253,15 +224,14 @@ def main() -> int:
                 os.pathsep
             )
         )
-    print(f"Using hipcc at: {hipcc_cmd}", flush=True)
+    logging.info(f"Using hipcc at: {hipcc_cmd}")
     if selected_clang:
-        print(f"Using clang++ at: {selected_clang}", flush=True)
+        logging.info(f"Using clang++ at: {selected_clang}")
     if runtime_root:
-        print(f"Using HIP runtime root: {runtime_root}", flush=True)
+        logging.info(f"Using HIP runtime root: {runtime_root}")
     else:
-        print(
-            f"WARNING: Could not find HIP runtime root, falling back to: {args.rocm_path}",
-            flush=True,
+        logging.warning(
+            f"Could not find HIP runtime root, falling back to: {args.rocm_path}"
         )
 
     failed = 0
@@ -269,16 +239,16 @@ def main() -> int:
         makefile_path = bench_dir / "Makefile"
         if not makefile_path.is_file():
             failed += 1
-            print(f"WARNING: Missing Makefile for {bench_dir.name}", flush=True)
+            logging.warning(f"Missing Makefile for {bench_dir.name}")
             continue
 
         patch_makefile(makefile_path, Path(env["ROCM_PATH"]), hipcc_cmd)
         proc = run_cmd(["make", "-j2"], bench_dir, env)
         if proc.returncode != 0:
             failed += 1
-            print(f"ERROR: Build failed for {bench_dir.name}", flush=True)
+            logging.error(f"Build failed for {bench_dir.name}")
             if proc.stderr:
-                print(proc.stderr, flush=True)
+                logging.error(proc.stderr)
 
     return 0 if failed == 0 else 1
 

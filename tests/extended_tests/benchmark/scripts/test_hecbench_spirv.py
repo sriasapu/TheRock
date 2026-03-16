@@ -105,13 +105,11 @@ HARD_FAILURE_STATUSES = {reason for _, reason in OUTPUT_FAILURE_PATTERNS} | {
     "run timed out",
 }
 
-DEFAULT_EXPECTED_FAILURES: set[str] = set()
-
 
 def _load_expected_failures() -> set[str]:
     expected_failures_raw = os.getenv("HECBENCH_EXPECTED_FAILURES")
     if expected_failures_raw is None:
-        return set(DEFAULT_EXPECTED_FAILURES)
+        return set()
 
     value = expected_failures_raw.strip()
     if not value or value.lower() in {"none", "off", "false", "0"}:
