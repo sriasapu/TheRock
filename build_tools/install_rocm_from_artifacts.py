@@ -23,6 +23,7 @@ python build_tools/install_rocm_from_artifacts.py
     [--blas | --no-blas]
     [--debug-tools | --no-debug-tools]
     [--fft | --no-fft]
+    [--hecbench_spirv | --no-hecbench_spirv]
     [--hipdnn | --no-hipdnn]
     [--hipdnn-samples | --no-hipdnn-samples]
     [--miopen | --no-miopen]
@@ -361,6 +362,7 @@ def retrieve_artifacts_by_run_id(args):
             args.rocrtst,
             args.rocwmma,
             args.libhipcxx,
+            args.hecbench_spirv,
         ]
     ):
         argv.extend(base_artifact_patterns)
@@ -450,6 +452,8 @@ def retrieve_artifacts_by_run_id(args):
             argv.append("amd-llvm_dev")
             argv.append("amd-llvm_lib")
             argv.append("base_dev_generic")
+        if args.hecbench_spirv:
+            extra_artifacts.append("hecbench-spirv")
 
         # Fetch _lib (always) and _test (when --tests) for each artifact.
         # Some projects have self-contained _test archives (just test
@@ -803,6 +807,13 @@ def main(argv):
 
     artifacts_group.add_argument(
         "--base-only", help="Include only base artifacts", action="store_true"
+    )
+
+    artifacts_group.add_argument(
+        "--hecbench_spirv",
+        default=False,
+        help="Enable artifact selection for HeCBench SPIR-V benchmark workflows",
+        action=argparse.BooleanOptionalAction,
     )
 
     group.add_argument(
