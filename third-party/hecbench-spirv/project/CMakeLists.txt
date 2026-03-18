@@ -6,11 +6,10 @@ project(hecbench_spirv_builder NONE)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-if(NOT DEFINED THEROCK_SOURCE_DIR)
-  message(FATAL_ERROR "THEROCK_SOURCE_DIR must be provided")
+if(NOT DEFINED HECBENCH_SOURCE_DIR OR NOT EXISTS "${HECBENCH_SOURCE_DIR}")
+  message(FATAL_ERROR "HECBENCH_SOURCE_DIR must be provided and point at fetched HeCBench sources")
 endif()
 
-set(HECBENCH_SOURCE_DIR "${THEROCK_SOURCE_DIR}/third-party/HeCBench")
 set(HECBENCH_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/hecbench_spirv_out")
 set(HECBENCH_SKIP_BENCHMARKS_FILE
   "${CMAKE_CURRENT_SOURCE_DIR}/hecbench_spirv_skipped_benchmarks.txt"
@@ -53,3 +52,5 @@ add_custom_target(hecbench_spirv_build ALL
 install(DIRECTORY "${HECBENCH_OUTPUT_DIR}/src/"
   DESTINATION "libexec/hecbench_spirv/src"
 )
+
+

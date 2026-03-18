@@ -124,11 +124,6 @@ description = "ROCm media libraries submodules"
 submodules = []
 disable_platforms = ["windows"]
 
-[source_sets.hecbench]
-description = "HeCBench benchmark submodule"
-submodules = ["third-party/HeCBench"]
-disable_platforms = ["windows"]
-
 # ==============================================================================
 # BUILD STAGES - Pipeline jobs that build sets of artifact groups
 # ==============================================================================
@@ -311,7 +306,7 @@ source_sets = ["rocm-systems"]
 description = "HeCBench SPIR-V benchmark suite (prebuilt benchmarks)"
 type = "generic"
 artifact_group_deps = ["hip-runtime"]
-source_sets = ["hecbench"]
+source_sets = []
 
 [artifact_groups.iree-compiler]
 description = "IREE compiler"

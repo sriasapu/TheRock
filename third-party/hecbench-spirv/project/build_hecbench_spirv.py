@@ -66,7 +66,7 @@ def patch_makefile(makefile_path: Path, rocm_path: Path, hipcc_cmd: str) -> None
 
         # Change-2: Update LDFLAGS line
         elif stripped.startswith("LDFLAGS"):
-            line = indent + "LDFLAGS := --hip-link --offload-arch=amdgcnspirv"
+            line = indent + "LDFLAGS := --hip-link --offload-arch=amdgcnspirv " + stripped.split('=',1)[-1]
 
         # Change-3: Update link rule (remove CFLAGS)
         elif "$(CC) $(CFLAGS) " in stripped and stripped.endswith(" $(LDFLAGS)"):
@@ -255,3 +255,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

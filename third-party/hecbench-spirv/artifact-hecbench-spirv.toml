@@ -6,3 +6,4 @@ include = [
 include = [
   "libexec/hecbench_spirv/src/**",
 ]
+

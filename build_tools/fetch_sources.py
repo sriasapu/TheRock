@@ -29,7 +29,6 @@ THIS_SCRIPT_DIR = Path(__file__).resolve().parent
 THEROCK_DIR = THIS_SCRIPT_DIR.parent
 PATCHES_DIR = THEROCK_DIR / "patches"
 TOPOLOGY_PATH = THEROCK_DIR / "BUILD_TOPOLOGY.toml"
-HECBENCH_SUBMODULE_PATH = "third-party/HeCBench"
 ALWAYS_SUBMODULE_PATHS: list[str] = []
 
 
@@ -168,25 +167,13 @@ def run(args):
     if args.remote:
         update_args += ["--remote"]
     if args.update_submodules:
-        regular_submodule_paths = [
-            path for path in submodule_paths if path != HECBENCH_SUBMODULE_PATH
-        ]
-        if regular_submodule_paths:
-            run_command(
-                ["git", "submodule", "update", "--init"]
-                + update_args
-                + ["--"]
-                + regular_submodule_paths,
-                cwd=THEROCK_DIR,
-            )
-        if HECBENCH_SUBMODULE_PATH in submodule_paths:
-            run_command(
-                ["git", "submodule", "update", "--init"]
-                + update_args
-                + ["--", HECBENCH_SUBMODULE_PATH],
-                cwd=THEROCK_DIR,
-                env={"GIT_LFS_SKIP_SMUDGE": "1"},
-            )
+        run_command(
+            ["git", "submodule", "update", "--init"]
+            + update_args
+            + ["--"]
+            + submodule_paths,
+            cwd=THEROCK_DIR,
+        )
     if args.dvc_projects:
         pull_large_files(args.dvc_projects, projects)
 
