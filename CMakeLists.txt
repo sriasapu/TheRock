@@ -264,14 +264,6 @@ cmake_dependent_option(THEROCK_ROCWMMA_ENABLE_BENCHMARKS
 
 # Additional manual features that don't map to artifacts
 
-# Profiler Trace Decoder Binary (not an artifact, just a config option)
-if(THEROCK_FLAG_INCLUDE_PROFILER)
-  therock_add_feature(ROCPROF_TRACE_DECODER_BINARY
-    GROUP PROFILER
-    DESCRIPTION "Enables the closed-source rocprof trace decoder binary"
-  )
-endif()
-
 # Finalize all feature flags.
 therock_finalize_features()
 therock_report_features()
@@ -469,6 +461,9 @@ add_subdirectory(math-libs)
 add_subdirectory(ml-libs)
 add_subdirectory(iree-libs)
 add_subdirectory(media-libs)
+if(THEROCK_ENABLE_HECBENCH_SPIRV)
+  add_subdirectory(hecbench-spirv)
+endif()
 
 if(THEROCK_BUILD_TESTING)
   add_subdirectory(examples)

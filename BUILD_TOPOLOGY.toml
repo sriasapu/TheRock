@@ -110,10 +110,6 @@ submodules = []
 description = "Communication library submodules"
 submodules = []
 
-[source_sets.profiler-extras]
-description = "Additional profiler submodules"
-submodules = ["rocprof-trace-decoder"]
-
 [source_sets.amd-mesa]
 description = "ROCm media submodules (Mesa for VA-API)"
 submodules = ["amd-mesa"]
@@ -126,6 +122,11 @@ submodules = ["iree", "fusilli"]
 [source_sets.media-libs]
 description = "ROCm media libraries submodules"
 submodules = []
+disable_platforms = ["windows"]
+
+[source_sets.hecbench]
+description = "HeCBench benchmark submodule"
+submodules = ["third-party/HeCBench"]
 disable_platforms = ["windows"]
 
 # ==============================================================================
@@ -190,6 +191,10 @@ artifact_groups = ["profiler-apps"]
 [build_stages.media-libs]
 description = "Media Libraries"
 artifact_groups = ["media-libs"]
+
+[build_stages.hecbench-spirv]
+description = "HeCBench SPIR-V benchmark suite (runs on nightly only)"
+artifact_groups = ["hecbench-spirv"]
 
 # ==============================================================================
 # ARTIFACT GROUPS - Logical groupings of related artifacts
@@ -300,7 +305,13 @@ source_sets = ["base", "rocm-systems"]  # RDC uses amdsmi from core-amdsmi
 description = "Profiler applications and analysis tools"
 type = "generic"
 artifact_group_deps = ["profiler-core", "compiler", "core-amdsmi"]
-source_sets = ["rocm-systems", "profiler-extras"]  # rocprofiler-systems + trace decoder
+source_sets = ["rocm-systems"]
+
+[artifact_groups.hecbench-spirv]
+description = "HeCBench SPIR-V benchmark suite (prebuilt benchmarks)"
+type = "generic"
+artifact_group_deps = ["hip-runtime"]
+source_sets = ["hecbench"]
 
 [artifact_groups.iree-compiler]
 description = "IREE compiler"
@@ -314,7 +325,7 @@ description = "Fusilli hipdnn provider"
 type = "generic"
 artifact_group_deps = ["hip-runtime", "iree-compiler"]
 # TODO: rocm-systems included for projects/hip/VERSION (see CMakeLists.txt)
-source_sets = ["iree-libs", "rocm-systems"]
+source_sets = ["iree-libs", "rocm-libraries", "rocm-systems"]
 
 [artifact_groups.media-libs]
 description = "Media Libraries"
@@ -482,10 +493,17 @@ feature_name = "CORE_AMDSMI"
 feature_group = "CORE"
 disable_platforms = ["windows"]
 
+[artifacts.core-kpack]
+artifact_group = "hip-runtime"
+type = "target-neutral"
+artifact_deps = ["sysdeps"]
+feature_name = "KPACK"
+feature_group = "CORE"
+
 [artifacts.core-hip]
 artifact_group = "hip-runtime"
 type = "target-neutral"
-artifact_deps = ["core-runtime", "amd-llvm"]
+artifact_deps = ["core-runtime", "amd-llvm", "core-kpack"]
 feature_name = "HIP_RUNTIME"
 feature_group = "CORE"  # Part of core, enabled by default
 
@@ -722,4 +740,14 @@ artifact_group = "debug-tools"
 type = "target-neutral"
 artifact_deps = ["amd-llvm", "amd-dbgapi", "sysdeps-gmp", "sysdeps-mpfr", "sysdeps-expat", "sysdeps-ncurses"]
 feature_group = "DEBUG_TOOLS"  # Part of DEBUG_TOOLS, enabled by default via THEROCK_ENABLE_ALL
+disable_platforms = ["windows"]
+
+# --- Benchmark Artifacts ---
+
+[artifacts.hecbench-spirv]
+artifact_group = "hecbench-spirv"
+type = "target-neutral"
+artifact_deps = ["core-hip", "amd-llvm"]
+feature_name = "HECBENCH_SPIRV"
+feature_group = "BENCHMARKS"
 disable_platforms = ["windows"]
