@@ -61,6 +61,18 @@ set(HECBENCH_SPIRV_LDFLAGS
   CACHE STRING "LDFLAGS for HeCBench SPIR-V benchmarks")
 
 # ---------------------------------------------------------------------------
+# Optional hipcub / rocprim include paths
+# ---------------------------------------------------------------------------
+if(DEFINED HECBENCH_HIPCUB_INCLUDE_DIR AND EXISTS "${HECBENCH_HIPCUB_INCLUDE_DIR}")
+  string(APPEND HECBENCH_SPIRV_CFLAGS " -I${HECBENCH_HIPCUB_INCLUDE_DIR}")
+  message(STATUS "HeCBench: adding hipCUB include dir ${HECBENCH_HIPCUB_INCLUDE_DIR}")
+endif()
+if(DEFINED HECBENCH_ROCPRIM_INCLUDE_DIR AND EXISTS "${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+  string(APPEND HECBENCH_SPIRV_CFLAGS " -I${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+  message(STATUS "HeCBench: adding rocPRIM include dir ${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+endif()
+
+# ---------------------------------------------------------------------------
 # Load skip list
 # ---------------------------------------------------------------------------
 set(_skip_file "${CMAKE_CURRENT_SOURCE_DIR}/hecbench_spirv_skipped_benchmarks.txt")
