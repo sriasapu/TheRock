@@ -48,8 +48,3 @@ endif()
 # gRPC: Static library for RDC (built on-demand when depended upon)
 # See: docs/rfcs/RFC0007-rdc-therock-integration.md
 add_subdirectory(grpc)
-
-if(THEROCK_ENABLE_HECBENCH_SPIRV)
-  add_subdirectory(hecbench-spirv)
-endif()
-

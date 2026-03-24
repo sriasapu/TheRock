@@ -100,12 +100,6 @@ OUTPUT_FAILURE_PATTERNS: List[Tuple[str, str]] = [
     (r"(?i)\bcopying of .* failed\b", "device-to-host copy failure reported"),
 ]
 
-HARD_FAILURE_STATUSES = {reason for _, reason in OUTPUT_FAILURE_PATTERNS} | {
-    "device-side assertion",
-    "run timed out",
-}
-
-
 def _load_expected_failures() -> set[str]:
     expected_failures_raw = os.getenv("HECBENCH_EXPECTED_FAILURES")
     if expected_failures_raw is None:
@@ -359,7 +353,8 @@ def _has_prebuilt_artifacts(bench_dir: Path) -> bool:
     if not (bench_dir / "Makefile").is_file():
         return False
 
-    return any(bench_dir.glob("*.o"))
+    # Check for compiled object files or the final executable.
+    return any(bench_dir.glob("*.o")) or (bench_dir / "main").is_file()
 
 
 def _select_bench_dirs(
@@ -594,11 +589,13 @@ class HeCBenchSPIRVBenchmark(BenchmarkBase):
         for entry in self._results:
             bench_name = entry["benchmark"]
             raw_status = entry["status"]
-            status = (
-                "PASS"
-                if raw_status == "passed" or raw_status.startswith("skipped")
-                else "FAIL"
-            )
+
+            # Skip benchmarks that were not built — don't show them in the table.
+            if raw_status.startswith("skipped"):
+                log.info("Omitting skipped benchmark from results: %s", bench_name)
+                continue
+
+            status = "PASS" if raw_status == "passed" else "FAIL"
 
             if status == "FAIL" and bench_name.lower() in self.expected_failures:
                 log.warning(
@@ -613,21 +610,6 @@ class HeCBenchSPIRVBenchmark(BenchmarkBase):
                 score = 0.0
             if unit is None:
                 unit = ""
-
-            # Some benchmarks can emit valid metrics despite non-ideal command status.
-            # Keep hard runtime/data-corruption failures as FAIL even when a metric appears.
-            if (
-                status == "FAIL"
-                and raw_status not in HARD_FAILURE_STATUSES
-                and score > 0.0
-                and bool(unit)
-            ):
-                log.warning(
-                    "Benchmark %s reported status '%s' but emitted a metric; treating as PASS",
-                    bench_name,
-                    raw_status,
-                )
-                status = "PASS"
 
             if status == "FAIL":
                 flag = "-"

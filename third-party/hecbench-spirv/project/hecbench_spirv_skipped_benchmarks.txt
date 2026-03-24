@@ -1,12 +1,9 @@
-# Temporarily skipped HeCBench HIP benchmarks for SPIR-V builds.
 aes-hip
-aidw-hip
-allreduce-hip
 aobench-hip
 assert-hip
 atomicCAS-hip
 atomicIntrinsics-hip
-attentionMultiHead-hip
+# axhelm-hip: Makefile expects BlasLapack/ subdirectory that is missing
 axhelm-hip
 b+tree-hip
 bfs-hip
