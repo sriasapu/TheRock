@@ -100,6 +100,7 @@ OUTPUT_FAILURE_PATTERNS: List[Tuple[str, str]] = [
     (r"(?i)\bcopying of .* failed\b", "device-to-host copy failure reported"),
 ]
 
+
 def _load_expected_failures() -> set[str]:
     expected_failures_raw = os.getenv("HECBENCH_EXPECTED_FAILURES")
     if expected_failures_raw is None:
@@ -412,7 +413,16 @@ class HeCBenchSPIRVBenchmark(BenchmarkBase):
                 / "hecbench_spirv"
             )
         else:
-            self.hecbench_build_dir = THEROCK_DIR / "build" / "hecbench_spirv"
+            # Try unified dist path first, then component-local stage/dist fallbacks
+            self.hecbench_build_dir = (
+                THEROCK_DIR
+                / "build"
+                / "dist"
+                / "rocm"
+                / "libexec"
+                / "hecbench_spirv"
+                / "src"
+            )
 
     def run_benchmarks(self) -> None:
         """Run prebuilt HeCBench SPIR-V benchmarks and collect results."""
