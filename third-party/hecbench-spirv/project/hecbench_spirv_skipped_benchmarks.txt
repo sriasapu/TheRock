@@ -1,3 +1,34 @@
+# OpenMP linkage issues (undefined __kmpc_* symbols for amdgcnspirv target)
+aidw-hip
+# CUDA library detection errors for amdgcnspirv target
+atomicAggregate-hip
+# OpenMP linkage issues (undefined __kmpc_* symbols for amdgcnspirv target)
+attentionMultiHead-hip
+# CUDA library detection errors for amdgcnspirv target
+axhelm-hip
+channelShuffle-hip
+colorwheel-hip
+concat-hip
+dp-hip
+floydwarshall2-hip
+bmf-hip
+dslash-hip
+diamond-hip
+fhd-hip
+fresnel-hip
+gelu-hip
+heat2d-hip
+ising-hip
+logprob-hip
+merkle-hip
+# Missing thrust/rocprim includes for amdgcnspirv target
+rodrigues-hip
+wsm5-hip
+pso-hip
+allreduce-hip
+rotary-hip
+rowwiseMoments-hip
+sort-hip
 aes-hip
 aobench-hip
 assert-hip

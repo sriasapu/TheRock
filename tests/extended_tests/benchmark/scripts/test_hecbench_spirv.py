@@ -391,6 +391,52 @@ def _select_bench_dirs(
     return benches
 
 
+def _resolve_hecbench_build_dir(therock_bin_dir: Optional[str]) -> Path:
+    """Resolve prebuilt HeCBench root from known TheRock output layouts."""
+    candidates: List[Path] = [
+        THEROCK_DIR
+        / "build"
+        / "third-party"
+        / "hecbench-spirv"
+        / "hecbench-spirv"
+        / "dist"
+        / "libexec"
+        / "hecbench_spirv",
+        THEROCK_DIR
+        / "build"
+        / "third-party"
+        / "hecbench-spirv"
+        / "hecbench-spirv"
+        / "stage"
+        / "libexec"
+        / "hecbench_spirv",
+        THEROCK_DIR / "build" / "dist" / "rocm" / "libexec" / "hecbench_spirv",
+    ]
+
+    if therock_bin_dir:
+        candidates.append(
+            Path(therock_bin_dir).resolve().parent / "libexec" / "hecbench_spirv"
+        )
+
+    seen: set[Path] = set()
+    unique_candidates: List[Path] = []
+    for candidate in candidates:
+        if candidate not in seen:
+            seen.add(candidate)
+            unique_candidates.append(candidate)
+
+    for candidate in unique_candidates:
+        src_dir = candidate / "src"
+        if src_dir.is_dir():
+            return candidate
+
+    checked = "\n  - " + "\n  - ".join(str(path / "src") for path in unique_candidates)
+    raise RuntimeError(
+        "Prebuilt HeCBench benchmarks not found. Checked:" + checked + "\n"
+        "Build HeCBench as part of TheRock build/install step before running this test."
+    )
+
+
 class HeCBenchSPIRVBenchmark(BenchmarkBase):
     """HeCBench SPIR-V benchmark test."""
 
@@ -402,27 +448,7 @@ class HeCBenchSPIRVBenchmark(BenchmarkBase):
         self.hecbench_benchmarks = os.getenv("HECBENCH_BENCHMARKS", "")
         self.run_timeout = _load_run_timeout()
         self.expected_failures = _load_expected_failures()
-
-        env_build_dir = os.getenv("HECBENCH_BUILD_DIR")
-        if env_build_dir:
-            self.hecbench_build_dir = Path(env_build_dir)
-        elif self.therock_bin_dir:
-            self.hecbench_build_dir = (
-                Path(self.therock_bin_dir).resolve().parent
-                / "libexec"
-                / "hecbench_spirv"
-            )
-        else:
-            # Try unified dist path first, then component-local stage/dist fallbacks
-            self.hecbench_build_dir = (
-                THEROCK_DIR
-                / "build"
-                / "dist"
-                / "rocm"
-                / "libexec"
-                / "hecbench_spirv"
-                / "src"
-            )
+        self.hecbench_build_dir = _resolve_hecbench_build_dir(self.therock_bin_dir)
 
     def run_benchmarks(self) -> None:
         """Run prebuilt HeCBench SPIR-V benchmarks and collect results."""

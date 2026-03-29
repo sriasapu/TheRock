@@ -9,15 +9,8 @@ therock_subproject_fetch(therock-hecbench-sources
 )
 
 set(_hecbench_optional_build_deps)
-set(_hecbench_extra_cmake_args)
 if(THEROCK_ENABLE_PRIM)
-  therock_cmake_subproject_dist_dir(_hipcub_dist hipCUB)
-  therock_cmake_subproject_dist_dir(_rocprim_dist rocPRIM)
-  set(_hecbench_optional_build_deps hipCUB)
-  list(APPEND _hecbench_extra_cmake_args
-    "-DHECBENCH_HIPCUB_INCLUDE_DIR=${_hipcub_dist}/include"
-    "-DHECBENCH_ROCPRIM_INCLUDE_DIR=${_rocprim_dist}/include"
-  )
+  set(_hecbench_optional_build_deps hipCUB rocPRIM)
 endif()
 
 therock_cmake_subproject_declare(hecbench-spirv
@@ -31,9 +24,10 @@ therock_cmake_subproject_declare(hecbench-spirv
     therock-hecbench-sources
   CMAKE_ARGS
     "-DHECBENCH_SOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}/source"
-    ${_hecbench_extra_cmake_args}
   BUILD_DEPS
     ${_hecbench_optional_build_deps}
+  RUNTIME_DEPS
+    hip-clr
   COMPILER_TOOLCHAIN
     amd-hip
 )

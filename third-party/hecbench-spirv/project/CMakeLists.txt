@@ -7,7 +7,7 @@
 # compiler toolchain provided by TheRock.
 
 cmake_minimum_required(VERSION 3.25)
-project(hecbench_spirv_builder NONE)
+project(hecbench_spirv_builder CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -36,17 +36,11 @@ if(NOT EXISTS "${HECBENCH_BASE}/src")
 endif()
 
 # ---------------------------------------------------------------------------
-# Resolve hipcc from the amd-hip toolchain
+# Resolve HIP compiler from configured toolchain
 # ---------------------------------------------------------------------------
-if(DEFINED THEROCK_TOOLCHAIN_ROOT AND EXISTS "${THEROCK_TOOLCHAIN_ROOT}")
-  find_program(HECBENCH_HIPCC
-    NAMES hipcc hipcc.bin
-    HINTS "${THEROCK_TOOLCHAIN_ROOT}/bin"
-    NO_DEFAULT_PATH
-  )
-endif()
+set(HECBENCH_HIPCC "${CMAKE_CXX_COMPILER}")
 if(NOT HECBENCH_HIPCC)
-  set(HECBENCH_HIPCC "${CMAKE_CXX_COMPILER}")
+  message(FATAL_ERROR "CMAKE_CXX_COMPILER is not set; expected a configured HIP-capable toolchain")
 endif()
 message(STATUS "HeCBench: using compiler ${HECBENCH_HIPCC}")
 
@@ -61,15 +55,62 @@ set(HECBENCH_SPIRV_LDFLAGS
   CACHE STRING "LDFLAGS for HeCBench SPIR-V benchmarks")
 
 # ---------------------------------------------------------------------------
-# Optional hipcub / rocprim include paths
+# Prefer upstream package config discovery for hipcub / rocprim include paths
 # ---------------------------------------------------------------------------
+set(_hecbench_extra_include_dirs)
+
+find_package(hipcub CONFIG QUIET)
+set(_hipcub_includes)
+if(TARGET hipcub::hipcub)
+  get_target_property(_hipcub_includes hipcub::hipcub INTERFACE_INCLUDE_DIRECTORIES)
+elseif(TARGET hipcub)
+  get_target_property(_hipcub_includes hipcub INTERFACE_INCLUDE_DIRECTORIES)
+elseif(DEFINED hipcub_INCLUDE_DIRS)
+  set(_hipcub_includes ${hipcub_INCLUDE_DIRS})
+elseif(DEFINED hipcub_INCLUDE_DIR)
+  set(_hipcub_includes ${hipcub_INCLUDE_DIR})
+endif()
+if(_hipcub_includes)
+  list(APPEND _hecbench_extra_include_dirs ${_hipcub_includes})
+  message(STATUS "HeCBench: using hipcub includes from package config")
+endif()
+
+find_package(rocprim CONFIG QUIET)
+set(_rocprim_includes)
+if(TARGET rocprim::rocprim)
+  get_target_property(_rocprim_includes rocprim::rocprim INTERFACE_INCLUDE_DIRECTORIES)
+elseif(TARGET rocprim)
+  get_target_property(_rocprim_includes rocprim INTERFACE_INCLUDE_DIRECTORIES)
+elseif(DEFINED rocprim_INCLUDE_DIRS)
+  set(_rocprim_includes ${rocprim_INCLUDE_DIRS})
+elseif(DEFINED rocprim_INCLUDE_DIR)
+  set(_rocprim_includes ${rocprim_INCLUDE_DIR})
+endif()
+if(_rocprim_includes)
+  list(APPEND _hecbench_extra_include_dirs ${_rocprim_includes})
+  message(STATUS "HeCBench: using rocprim includes from package config")
+endif()
+
+# Keep explicit include-path overrides for local debugging/custom setups.
 if(DEFINED HECBENCH_HIPCUB_INCLUDE_DIR AND EXISTS "${HECBENCH_HIPCUB_INCLUDE_DIR}")
-  string(APPEND HECBENCH_SPIRV_CFLAGS " -I${HECBENCH_HIPCUB_INCLUDE_DIR}")
-  message(STATUS "HeCBench: adding hipCUB include dir ${HECBENCH_HIPCUB_INCLUDE_DIR}")
+  list(APPEND _hecbench_extra_include_dirs "${HECBENCH_HIPCUB_INCLUDE_DIR}")
+  message(STATUS "HeCBench: adding explicit hipCUB include dir ${HECBENCH_HIPCUB_INCLUDE_DIR}")
 endif()
 if(DEFINED HECBENCH_ROCPRIM_INCLUDE_DIR AND EXISTS "${HECBENCH_ROCPRIM_INCLUDE_DIR}")
-  string(APPEND HECBENCH_SPIRV_CFLAGS " -I${HECBENCH_ROCPRIM_INCLUDE_DIR}")
-  message(STATUS "HeCBench: adding rocPRIM include dir ${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+  list(APPEND _hecbench_extra_include_dirs "${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+  message(STATUS "HeCBench: adding explicit rocPRIM include dir ${HECBENCH_ROCPRIM_INCLUDE_DIR}")
+endif()
+
+if(_hecbench_extra_include_dirs)
+  list(REMOVE_DUPLICATES _hecbench_extra_include_dirs)
+  foreach(_inc ${_hecbench_extra_include_dirs})
+    if(_inc MATCHES "^\\$<")
+      continue()
+    endif()
+    if(EXISTS "${_inc}")
+      string(APPEND HECBENCH_SPIRV_CFLAGS " -I\"${_inc}\"")
+    endif()
+  endforeach()
 endif()
 
 # ---------------------------------------------------------------------------
