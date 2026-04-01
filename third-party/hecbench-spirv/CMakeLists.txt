@@ -10,8 +10,13 @@ therock_subproject_fetch(therock-hecbench-sources
 
 # Build complete CFLAGS with prim includes from BUILD_DEPS
 set(_hecbench_cflags "-x hip --offload-arch=amdgcnspirv -std=c++17 -Wall")
-string(APPEND _hecbench_cflags " -I${THEROCK_BINARY_DIR}/math-libs/hipCUB/stage/include")
-string(APPEND _hecbench_cflags " -I${THEROCK_BINARY_DIR}/math-libs/rocPRIM/stage/include")
+set(_hecbench_optional_build_deps)
+
+if(THEROCK_ENABLE_PRIM)
+  string(APPEND _hecbench_cflags " -I${THEROCK_BINARY_DIR}/math-libs/hipCUB/stage/include")
+  string(APPEND _hecbench_cflags " -I${THEROCK_BINARY_DIR}/math-libs/rocPRIM/stage/include")
+  list(APPEND _hecbench_optional_build_deps hipCUB rocPRIM)
+endif()
 
 therock_cmake_subproject_declare(hecbench-spirv
   EXTERNAL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/project"
@@ -26,8 +31,7 @@ therock_cmake_subproject_declare(hecbench-spirv
     "-DHECBENCH_SOURCE_DIR=${CMAKE_CURRENT_BINARY_DIR}/source"
     "-DHECBENCH_SPIRV_CFLAGS=${_hecbench_cflags}"
   BUILD_DEPS
-    hipCUB
-    rocPRIM
+    ${_hecbench_optional_build_deps}
   RUNTIME_DEPS
     hip-clr
   COMPILER_TOOLCHAIN
