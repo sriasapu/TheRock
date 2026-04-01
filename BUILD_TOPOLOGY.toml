@@ -190,6 +190,8 @@ artifact_groups = ["media-libs"]
 [build_stages.hecbench-spirv]
 description = "HeCBench SPIR-V benchmark suite (runs on nightly only)"
 artifact_groups = ["hecbench-spirv"]
+type = "per-arch"
+depends_on = ["math-libs"]
 
 # ==============================================================================
 # ARTIFACT GROUPS - Logical groupings of related artifacts
@@ -304,9 +306,10 @@ source_sets = ["rocm-systems"]
 
 [artifact_groups.hecbench-spirv]
 description = "HeCBench SPIR-V benchmark suite (prebuilt benchmarks)"
-type = "generic"
-artifact_group_deps = ["hip-runtime"]
+type = "per-arch"
+artifact_group_deps = ["math-libs"]
 source_sets = []
+disable_platforms = ["windows"]
 
 [artifact_groups.iree-compiler]
 description = "IREE compiler"
@@ -752,8 +755,8 @@ disable_platforms = ["windows"]
 
 [artifacts.hecbench-spirv]
 artifact_group = "hecbench-spirv"
-type = "target-neutral"
-artifact_deps = ["core-hip", "amd-llvm"]
+type = "target-specific"
+artifact_deps = ["core-hip", "amd-llvm", "prim"]
 feature_name = "HECBENCH_SPIRV"
 feature_group = "BENCHMARKS"
 disable_platforms = ["windows"]
